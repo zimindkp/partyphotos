@@ -3,240 +3,388 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Share Your Party Photos</title>
+  <title>40th Anniversary | Maria & Giacomo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg: #f8fafc;
+      --gold: #d4af37;
+      --navy: #0f172a;
+      --bg: #faf9f6;
       --card-bg: #ffffff;
-      --text: #0f172a;
-      --text-muted: #475569;
-      --success: #16a34a;
-      --error: #dc2626;
+      --text: #1e293b;
+      --muted: #64748b;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Montserrat', sans-serif;
       background-color: var(--bg);
       color: var(--text);
-      margin: 0;
-      padding: 1.5rem 1rem;
       display: flex;
       justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
     }
 
-    .container {
+    /* --- INTRO OVERLAY --- */
+    #introOverlay {
+      position: fixed;
+      inset: 0;
+      background-color: var(--navy);
+      color: white;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+      transition: opacity 1s ease, visibility 1s ease;
+    }
+
+    #introOverlay.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .intro-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2.5rem;
+      color: var(--gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .intro-subtitle {
+      font-size: 1.1rem;
+      letter-spacing: 2px;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .enter-btn {
+      background: transparent;
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      padding: 0.8rem 2rem;
+      border-radius: 30px;
+      cursor: pointer;
+      letter-spacing: 1.5px;
+      transition: all 0.3s ease;
+    }
+
+    .enter-btn:hover {
+      background: var(--gold);
+      color: var(--navy);
+    }
+
+    /* --- MAIN PAGE CONTENT --- */
+    .app-container {
       width: 100%;
       max-width: 480px;
       background: var(--card-bg);
-      padding: 2rem 1.5rem;
-      border-radius: 20px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+      border-radius: 24px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+
+    .app-container.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Hero Header */
+    .hero-section {
+      padding: 2rem 1.5rem 1rem;
+      text-align: center;
+      background: linear-gradient(180deg, #fff 0%, var(--bg) 100%);
+    }
+
+    .hero-badge {
+      font-family: 'Cinzel', serif;
+      font-size: 1.8rem;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+    /* Hexagon/Card Image Layout */
+    .photo-frame-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: -15px;
+      margin: 1rem 0;
+      position: relative;
+    }
+
+    .photo-card {
+      width: 140px;
+      height: 170px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 3px solid white;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .photo-card.wedding {
+      transform: rotate(-6deg) translateX(10px);
+      z-index: 1;
+    }
+
+    .photo-card.recent {
+      transform: rotate(6deg) translateX(-10px);
+      z-index: 2;
+    }
+
+    .couple-names {
+      font-family: 'Cinzel', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--navy);
+      margin-top: 1rem;
+      text-transform: uppercase;
+    }
+
+    .event-date {
+      font-size: 0.9rem;
+      letter-spacing: 3px;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      text-transform: uppercase;
+    }
+
+    /* Action Buttons */
+    .actions-section {
+      padding: 1.5rem;
       text-align: center;
     }
 
-    h1 {
-      font-size: 1.75rem;
-      margin: 0 0 0.5rem 0;
-    }
-
-    p {
-      color: var(--text-muted);
-      font-size: 1.05rem;
-      margin: 0 0 1.5rem 0;
-      line-height: 1.4;
-    }
-
     .upload-btn {
-      display: inline-block;
+      display: block;
       width: 100%;
-      background-color: var(--primary);
+      background: var(--navy);
       color: white;
-      font-size: 1.2rem;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 1.05rem;
       font-weight: 600;
       padding: 1.1rem;
       border-radius: 14px;
       cursor: pointer;
       border: none;
-      transition: background-color 0.2s ease, transform 0.1s ease;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
     }
 
-    .upload-btn:active {
-      transform: scale(0.98);
-      background-color: var(--primary-hover);
-    }
-
-    input[type="file"] {
-      display: none;
-    }
+    input[type="file"] { display: none; }
 
     .status-summary {
-      margin-top: 1.25rem;
+      margin-top: 1rem;
       font-weight: 600;
-      font-size: 1.05rem;
-      min-height: 1.5rem;
+      font-size: 0.95rem;
+      min-height: 1.2rem;
     }
 
-    /* Thumbnail Grid */
-    .preview-grid {
+    /* Live Gallery */
+    .gallery-section {
+      padding: 1.5rem;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .gallery-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: var(--navy);
+      text-align: center;
+      margin-bottom: 1rem;
+      letter-spacing: 1px;
+    }
+
+    .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin-top: 1.5rem;
+      gap: 8px;
     }
 
-    .preview-item {
+    .grid-item {
       position: relative;
       aspect-ratio: 1 / 1;
-      border-radius: 12px;
+      border-radius: 10px;
       overflow: hidden;
-      background-color: #e2e8f0;
+      background: #e2e8f0;
     }
 
-    .preview-item img, .preview-item video {
+    .grid-item img, .grid-item video {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
 
-    /* Status Overlays */
     .overlay {
       position: absolute;
       inset: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0,0,0,0.4);
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.3s ease;
-    }
-
-    .overlay.success {
-      background: rgba(22, 163, 74, 0.3);
-    }
-
-    .overlay.error {
-      background: rgba(220, 38, 38, 0.5);
-    }
-
-    /* Loading Spinner */
-    .spinner {
-      width: 24px;
-      height: 24px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Status Badges */
-    .badge {
-      font-size: 1.25rem;
       color: white;
       font-weight: bold;
     }
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h1>Share Your Party Photos! 📸</h1>
-    <p>Tap below to upload photos directly from your phone camera or gallery.</p>
+  <!-- Intro Screen -->
+  <div id="introOverlay">
+    <div class="intro-title">40th Anniversary</div>
+    <div class="intro-subtitle">Maria & Giacomo</div>
+    <button class="enter-btn" onclick="enterSite()">Welcome Guests</button>
+  </div>
 
-    <label class="upload-btn">
-      Select Photos
-      <input type="file" id="fileInput" accept="image/*,video/*" multiple onchange="handleFiles(this.files)">
-    </label>
+  <!-- Main Application Card -->
+  <div class="app-container" id="appContainer">
+    
+    <!-- Hero Header -->
+    <div class="hero-section">
+      <div class="hero-badge">40th Anniversary</div>
+      
+      <div class="photo-frame-container">
+        <div class="photo-card wedding" style="background-image: url('hero-wedding.jpg');"></div>
+        <div class="photo-card recent" style="background-image: url('hero-recent.jpg');"></div>
+      </div>
 
-    <div id="statusSummary" class="status-summary"></div>
-    <div id="previewGrid" class="preview-grid"></div>
+      <div class="couple-names">Giacomo & Maria</div>
+      <div class="event-date">13 Sept, 2026</div>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="actions-section">
+      <label class="upload-btn">
+        📷 Share Your Photos
+        <input type="file" id="fileInput" accept="image/*,video/*" multiple onchange="uploadFiles(this.files)">
+      </label>
+
+      <div id="statusSummary" class="status-summary"></div>
+    </div>
+
+    <!-- Shared Party Gallery -->
+    <div class="gallery-section">
+      <div class="gallery-title">Party Gallery</div>
+      <div id="galleryGrid" class="grid"></div>
+    </div>
+
   </div>
 
   <script>
-    // Configuration
+    // --- CONFIGURATION ---
     const CLOUD_NAME = 'kpcloudinary';
-    const UPLOAD_PRESET = 'UnsignedUploads';
+    const UPLOAD_PRESET = 'MariaGiacomo40th';
+    const EVENT_TAG = 'mariagiacomo40'; // Tag set in your Cloudinary Upload Preset
 
-    async function handleFiles(files) {
+    // Intro Fade-in logic
+    function enterSite() {
+      const overlay = document.getElementById('introOverlay');
+      const app = document.getElementById('appContainer');
+      
+      overlay.classList.add('fade-out');
+      setTimeout(() => {
+        app.classList.add('visible');
+        loadSharedGallery();
+      }, 500);
+    }
+
+    // Load existing photos from Cloudinary on page load
+    async function loadSharedGallery() {
+      const grid = document.getElementById('galleryGrid');
+      try {
+        // Fetches JSON list of images tagged with EVENT_TAG
+        const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${EVENT_TAG}.json`);
+        if (!res.ok) return;
+        
+        const data = await res.json();
+        grid.innerHTML = '';
+
+        data.resources.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'grid-item';
+          const imgUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_fill,w_300,h_300,q_auto,f_auto/v${item.version}/${item.public_id}.${item.format}`;
+          card.innerHTML = `<img src="${imgUrl}" alt="Party Photo" loading="lazy">`;
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.log('Gallery fetch error or empty gallery.');
+      }
+    }
+
+    // Handle File Uploads
+    async function uploadFiles(files) {
       if (!files || files.length === 0) return;
 
-      const grid = document.getElementById('previewGrid');
+      const grid = document.getElementById('galleryGrid');
       const statusSummary = document.getElementById('statusSummary');
-
-      grid.innerHTML = '';
-      statusSummary.style.color = 'var(--text)';
       statusSummary.innerText = `Uploading 0 of ${files.length}...`;
 
-      let completedCount = 0;
-      let errorCount = 0;
+      let completed = 0;
 
-      // Create preview cards upfront
-      const fileTasks = Array.from(files).map((file, index) => {
-        const item = document.createElement('div');
-        item.className = 'preview-item';
-
-        const isVideo = file.type.startsWith('video/');
-        const mediaElem = document.createElement(isVideo ? 'video' : 'img');
-        mediaElem.src = URL.revokeObjectURL ? URL.createObjectURL(file) : '';
-
-        const overlay = document.createElement('div');
-        overlay.className = 'overlay';
-        overlay.id = `overlay-${index}`;
-        overlay.innerHTML = `<div class="spinner"></div>`;
-
-        item.appendChild(mediaElem);
-        item.appendChild(overlay);
-        grid.appendChild(item);
-
-        return { file, index, overlay };
-      });
-
-      // Upload sequentially to avoid network congestion on public mobile connections
-      for (const task of fileTasks) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         const formData = new FormData();
-        formData.append('file', task.file);
+        formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('tags', EVENT_TAG); // Tag photo so it shows in the shared gallery
+
+        // Create temporary preview at top of gallery
+        const tempCard = document.createElement('div');
+        tempCard.className = 'grid-item';
+        tempCard.innerHTML = `
+          <img src="${URL.createObjectURL(file)}">
+          <div class="overlay"><div class="spinner"></div></div>
+        `;
+        grid.prepend(tempCard);
 
         try {
-          const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
             method: 'POST',
             body: formData
           });
 
-          if (response.ok) {
-            completedCount++;
-            task.overlay.className = 'overlay success';
-            task.overlay.innerHTML = `<span class="badge">✓</span>`;
+          if (res.ok) {
+            completed++;
+            tempCard.querySelector('.overlay').remove();
           } else {
-            errorCount++;
-            task.overlay.className = 'overlay error';
-            task.overlay.innerHTML = `<span class="badge">✕</span>`;
+            tempCard.remove();
           }
         } catch (err) {
-          errorCount++;
-          task.overlay.className = 'overlay error';
-          task.overlay.innerHTML = `<span class="badge">✕</span>`;
+          tempCard.remove();
         }
 
-        statusSummary.innerText = `Uploading ${completedCount + errorCount} of ${files.length}...`;
+        statusSummary.innerText = `Uploading ${completed} of ${files.length}...`;
       }
 
-      // Final Status Message
-      if (errorCount === 0) {
-        statusSummary.style.color = 'var(--success)';
-        statusSummary.innerText = '✅ All photos uploaded! Thank you!';
-      } else {
-        statusSummary.style.color = 'var(--error)';
-        statusSummary.innerText = `Uploaded ${completedCount} photos. ${errorCount} failed.`;
-      }
-
-      // Reset file input so users can upload another batch if needed
+      statusSummary.innerText = '✅ Photos Shared Successfully!';
       document.getElementById('fileInput').value = '';
     }
   </script>
