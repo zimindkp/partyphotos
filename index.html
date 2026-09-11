@@ -66,22 +66,32 @@
     }
 
     .enter-btn {
-      background: transparent;
-      border: 2px solid var(--gold);
-      color: var(--gold);
-      font-family: 'Cinzel', serif;
-      font-size: 1.1rem;
-      padding: 0.8rem 2rem;
-      border-radius: 30px;
-      cursor: pointer;
-      letter-spacing: 1.5px;
-      transition: all 0.3s ease;
-    }
+  background: var(--gold);
+  color: var(--navy);
+  font-family: 'Cinzel', serif;
+  font-size: 1.25rem;
+  font-weight: 700; /* Bold text */
+  padding: 1.1rem 2.5rem;
+  border-radius: 30px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  border: none;
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite; /* Gentle breathing animation */
+}
 
-    .enter-btn:hover {
-      background: var(--gold);
-      color: var(--navy);
-    }
+.enter-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.6);
+}
+
+/* Subtly invites users to tap */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
 
     /* --- MAIN PAGE CONTENT --- */
     .app-container {
@@ -118,7 +128,6 @@
       font-weight: 700;
     }
 
-    /* Hexagon/Card Image Layout */
     .photo-frame-container {
       display: flex;
       justify-content: center;
@@ -178,16 +187,30 @@
       width: 100%;
       background: var(--navy);
       color: white;
-      font-family: 'Montserrat', sans-serif;
+      font-family: 'Cinzel', serif;
       font-size: 1.05rem;
-      font-weight: 600;
-      padding: 1.1rem;
-      border-radius: 14px;
+      font-weight: 700;
+      padding: 1.2rem;
+      border-radius: 16px;
       cursor: pointer;
       border: none;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       text-transform: uppercase;
       box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+      transition: all 0.3s ease;
+      animation: pulseMain 2s infinite;
+    }
+
+    .upload-btn:active {
+        transform: scale(0.97);
+        box-shadow: 0 3px 10px rgba(212, 175, 55, 0.4);
+    }
+
+    /* Eye-catching pulse animation for the upload action */
+    @keyframes pulseMain {
+        0% { transform: scale(1); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35); }
+        50% { transform: scale(1.02); box-shadow: 0 8px 25px rgba(212, 175, 55, 0.55); }
+        100% { transform: scale(1); box-shadow: 0 6px 20px rgba(212, 175, 55, 0.35); }
     }
 
     input[type="file"] { display: none; }
@@ -226,12 +249,18 @@
       border-radius: 10px;
       overflow: hidden;
       background: #e2e8f0;
+      cursor: pointer;
     }
 
     .grid-item img, .grid-item video {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.2s ease;
+    }
+
+    .grid-item:active img {
+      transform: scale(0.95);
     }
 
     .overlay {
@@ -243,7 +272,9 @@
       justify-content: center;
       color: white;
       font-weight: bold;
+      pointer-events: none;
     }
+
     .spinner {
       width: 20px;
       height: 20px;
@@ -252,7 +283,55 @@
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
+
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- LIGHTBOX MODAL --- */
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    #lightbox.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #lightboxImg {
+      max-width: 95%;
+      max-height: 85vh;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      object-fit: contain;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.2);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
   </style>
 </head>
 <body>
@@ -284,7 +363,7 @@
     <div class="actions-section">
       <label class="upload-btn">
         📷 Share Your Photos
-        <input type="file" id="fileInput" accept="image/*,video/*" multiple onchange="uploadFiles(this.files)">
+        <input type="file" id="fileInput" accept="image/png, image/jpeg, image/heic, image/webp, video/mp4, video/quicktime" multiple onchange="uploadFiles(this.files)">
       </label>
 
       <div id="statusSummary" class="status-summary"></div>
@@ -298,117 +377,150 @@
 
   </div>
 
+  <!-- Fullscreen Lightbox Modal -->
+  <div id="lightbox" onclick="closeLightbox(event)">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImg" src="" alt="Enlarged Photo">
+  </div>
+
   <script>
     // --- CONFIGURATION ---
-const CLOUD_NAME = 'kpcloudinary';
-const UPLOAD_PRESET = 'MariaGiacomo40th';
-const ALBUM_TAG = 'mariagiacomo40'; // Matches your Cloudinary folder tag
+    const CLOUD_NAME = 'kpcloudinary';
+    const UPLOAD_PRESET = 'MariaGiacomo40th';
+    const ALBUM_TAG = 'mariagiacomo40';
 
-// Intro Fade-in logic
-function enterSite() {
-  const overlay = document.getElementById('introOverlay');
-  const app = document.getElementById('appContainer');
-  
-  overlay.classList.add('fade-out');
-  setTimeout(() => {
-    app.classList.add('visible');
-    loadSharedGallery();
-  }, 500);
-}
-
-// Fetch and display all photos tagged with 'MariaGiacomo40th'
-async function loadSharedGallery() {
-  const grid = document.getElementById('galleryGrid');
-  grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">Loading album...</div>';
-
-  try {
-    // Fetches public resource list for the tag
-    const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${ALBUM_TAG}.json?nc=${Date.now()}`);
-    
-    if (!res.ok) {
-      grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">No photos uploaded yet. Be the first!</div>';
-      return;
-    }
-    
-    const data = await res.json();
-    grid.innerHTML = '';
-
-    if (data.resources.length === 0) {
-      grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">No photos uploaded yet. Be the first!</div>';
-      return;
+    // Intro Fade-in logic
+    function enterSite() {
+      const overlay = document.getElementById('introOverlay');
+      const app = document.getElementById('appContainer');
+      
+      overlay.classList.add('fade-out');
+      setTimeout(() => {
+        app.classList.add('visible');
+        loadSharedGallery();
+      }, 500);
     }
 
-    data.resources.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'grid-item';
-      // Deliver optimized webp/jpg thumbnails with auto-quality and cropping
-      const imgUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_fill,w_300,h_300,q_auto,f_auto/v${item.version}/${item.public_id}.${item.format}`;
-      card.innerHTML = `<img src="${imgUrl}" alt="Party Photo" loading="lazy">`;
-      grid.appendChild(card);
-    });
-  } catch (e) {
-    console.error('Gallery error:', e);
-    grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">Be the first to share a photo!</div>';
-  }
-}
+    // Lightbox Controls
+    function openLightbox(fullUrl) {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      lightboxImg.src = fullUrl;
+      lightbox.classList.add('active');
+    }
 
-// Handle File Uploads
-async function uploadFiles(files) {
-  if (!files || files.length === 0) return;
-
-  const grid = document.getElementById('galleryGrid');
-  const statusSummary = document.getElementById('statusSummary');
-  
-  // Clear empty state message if present
-  if (grid.innerText.includes('No photos') || grid.innerText.includes('Loading')) {
-    grid.innerHTML = '';
-  }
-
-  statusSummary.innerText = `Uploading 0 of ${files.length}...`;
-  let completed = 0;
-
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', UPLOAD_PRESET);
-    formData.append('tags', ALBUM_TAG); // Attach tag explicitly on client upload
-    formData.append('folder', 'MariaGiacomo40th'); // Put into folder in Cloudinary UI
-
-    // Create temporary preview card
-    const tempCard = document.createElement('div');
-    tempCard.className = 'grid-item';
-    tempCard.innerHTML = `
-      <img src="${URL.createObjectURL(file)}">
-      <div class="overlay"><div class="spinner"></div></div>
-    `;
-    grid.prepend(tempCard);
-
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (res.ok) {
-        completed++;
-        tempCard.querySelector('.overlay').remove();
-      } else {
-        tempCard.remove();
+    function closeLightbox(e) {
+      // Close if user clicks background or close button
+      if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-close')) {
+        const lightbox = document.getElementById('lightbox');
+        lightbox.classList.remove('active');
+        setTimeout(() => {
+          document.getElementById('lightboxImg').src = '';
+        }, 300);
       }
-    } catch (err) {
-      tempCard.remove();
     }
 
-    statusSummary.innerText = `Uploading ${completed} of ${files.length}...`;
-  }
+    // Load existing photos from Cloudinary
+    async function loadSharedGallery() {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">Loading album...</div>';
 
-  statusSummary.innerText = '✅ Photos Shared Successfully!';
-  document.getElementById('fileInput').value = '';
-  
-  // Refresh gallery list after a brief delay to align versions
-  setTimeout(loadSharedGallery, 1500);
-}
+      try {
+        const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${ALBUM_TAG}.json?cb=${Date.now()}`);
+        
+        if (!res.ok) {
+          grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">No photos uploaded yet. Be the first!</div>';
+          return;
+        }
+        
+        const data = await res.json();
+        grid.innerHTML = '';
+
+        if (data.resources.length === 0) {
+          grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">No photos uploaded yet. Be the first!</div>';
+          return;
+        }
+
+        data.resources.forEach(item => {
+          const card = document.createElement('div');
+          card.className = 'grid-item';
+          
+          // Small thumbnail for the grid
+          const thumbUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_fill,w_300,h_300,q_auto,f_auto/v${item.version}/${item.public_id}.${item.format}`;
+          // High-resolution version for the lightbox
+          const fullUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/q_auto,f_auto/v${item.version}/${item.public_id}.${item.format}`;
+          
+          card.innerHTML = `<img src="${thumbUrl}" alt="Party Photo" loading="lazy">`;
+          card.onclick = () => openLightbox(fullUrl);
+          grid.appendChild(card);
+        });
+      } catch (e) {
+        console.error('Gallery error:', e);
+        grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">Be the first to share a photo!</div>';
+      }
+    }
+
+    // Handle File Uploads
+    async function uploadFiles(files) {
+      if (!files || files.length === 0) return;
+
+      const grid = document.getElementById('galleryGrid');
+      const statusSummary = document.getElementById('statusSummary');
+      
+      if (grid.innerText.includes('No photos') || grid.innerText.includes('Loading')) {
+        grid.innerHTML = '';
+      }
+
+      statusSummary.innerText = `Uploading 0 of ${files.length}...`;
+      let completed = 0;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('tags', ALBUM_TAG);
+        formData.append('folder', 'MariaGiacomo40th');
+
+        const localBlobUrl = URL.createObjectURL(file);
+        
+        // Create temporary preview card
+        const tempCard = document.createElement('div');
+        tempCard.className = 'grid-item';
+        tempCard.innerHTML = `
+          <img src="${localBlobUrl}">
+          <div class="overlay"><div class="spinner"></div></div>
+        `;
+        // Allow user to tap preview even while uploading
+        tempCard.onclick = () => openLightbox(localBlobUrl);
+        grid.prepend(tempCard);
+
+        try {
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (res.ok) {
+            completed++;
+            const overlay = tempCard.querySelector('.overlay');
+            if (overlay) overlay.remove();
+          } else {
+            tempCard.remove();
+          }
+        } catch (err) {
+          tempCard.remove();
+        }
+
+        statusSummary.innerText = `Uploading ${completed} of ${files.length}...`;
+      }
+
+      statusSummary.innerText = '✅ Photos Shared Successfully!';
+      document.getElementById('fileInput').value = '';
+      
+      // Refresh gallery list after a brief delay so Cloudinary versions update
+      setTimeout(loadSharedGallery, 1500);
+    }
   </script>
 </body>
 </html>
