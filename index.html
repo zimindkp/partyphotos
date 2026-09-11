@@ -300,93 +300,115 @@
 
   <script>
     // --- CONFIGURATION ---
-    const CLOUD_NAME = 'kpcloudinary';
-    const UPLOAD_PRESET = 'MariaGiacomo40th';
-    const EVENT_TAG = 'mariagiacomo40'; // Tag set in your Cloudinary Upload Preset
+const CLOUD_NAME = 'kpcloudinary';
+const UPLOAD_PRESET = 'MariaGiacomo40th';
+const ALBUM_TAG = 'mariagiacomo40'; // Matches your Cloudinary folder tag
 
-    // Intro Fade-in logic
-    function enterSite() {
-      const overlay = document.getElementById('introOverlay');
-      const app = document.getElementById('appContainer');
-      
-      overlay.classList.add('fade-out');
-      setTimeout(() => {
-        app.classList.add('visible');
-        loadSharedGallery();
-      }, 500);
+// Intro Fade-in logic
+function enterSite() {
+  const overlay = document.getElementById('introOverlay');
+  const app = document.getElementById('appContainer');
+  
+  overlay.classList.add('fade-out');
+  setTimeout(() => {
+    app.classList.add('visible');
+    loadSharedGallery();
+  }, 500);
+}
+
+// Fetch and display all photos tagged with 'MariaGiacomo40th'
+async function loadSharedGallery() {
+  const grid = document.getElementById('galleryGrid');
+  grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">Loading album...</div>';
+
+  try {
+    // Fetches public resource list for the tag
+    const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${ALBUM_TAG}.json?nc=${Date.now()}`);
+    
+    if (!res.ok) {
+      grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">No photos uploaded yet. Be the first!</div>';
+      return;
+    }
+    
+    const data = await res.json();
+    grid.innerHTML = '';
+
+    if (data.resources.length === 0) {
+      grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">No photos uploaded yet. Be the first!</div>';
+      return;
     }
 
-    // Load existing photos from Cloudinary on page load
-    async function loadSharedGallery() {
-      const grid = document.getElementById('galleryGrid');
-      try {
-        // Fetches JSON list of images tagged with EVENT_TAG
-        const res = await fetch(`https://res.cloudinary.com/${CLOUD_NAME}/image/list/${EVENT_TAG}.json`);
-        if (!res.ok) return;
-        
-        const data = await res.json();
-        grid.innerHTML = '';
+    data.resources.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'grid-item';
+      // Deliver optimized webp/jpg thumbnails with auto-quality and cropping
+      const imgUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_fill,w_300,h_300,q_auto,f_auto/v${item.version}/${item.public_id}.${item.format}`;
+      card.innerHTML = `<img src="${imgUrl}" alt="Party Photo" loading="lazy">`;
+      grid.appendChild(card);
+    });
+  } catch (e) {
+    console.error('Gallery error:', e);
+    grid.innerHTML = '<div style="grid-column: span 3; text-align: center; color: #64748b; padding: 1rem;">Be the first to share a photo!</div>';
+  }
+}
 
-        data.resources.forEach(item => {
-          const card = document.createElement('div');
-          card.className = 'grid-item';
-          const imgUrl = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_fill,w_300,h_300,q_auto,f_auto/v${item.version}/${item.public_id}.${item.format}`;
-          card.innerHTML = `<img src="${imgUrl}" alt="Party Photo" loading="lazy">`;
-          grid.appendChild(card);
-        });
-      } catch (e) {
-        console.log('Gallery fetch error or empty gallery.');
+// Handle File Uploads
+async function uploadFiles(files) {
+  if (!files || files.length === 0) return;
+
+  const grid = document.getElementById('galleryGrid');
+  const statusSummary = document.getElementById('statusSummary');
+  
+  // Clear empty state message if present
+  if (grid.innerText.includes('No photos') || grid.innerText.includes('Loading')) {
+    grid.innerHTML = '';
+  }
+
+  statusSummary.innerText = `Uploading 0 of ${files.length}...`;
+  let completed = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', UPLOAD_PRESET);
+    formData.append('tags', ALBUM_TAG); // Attach tag explicitly on client upload
+    formData.append('folder', 'MariaGiacomo40th'); // Put into folder in Cloudinary UI
+
+    // Create temporary preview card
+    const tempCard = document.createElement('div');
+    tempCard.className = 'grid-item';
+    tempCard.innerHTML = `
+      <img src="${URL.createObjectURL(file)}">
+      <div class="overlay"><div class="spinner"></div></div>
+    `;
+    grid.prepend(tempCard);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        completed++;
+        tempCard.querySelector('.overlay').remove();
+      } else {
+        tempCard.remove();
       }
+    } catch (err) {
+      tempCard.remove();
     }
 
-    // Handle File Uploads
-    async function uploadFiles(files) {
-      if (!files || files.length === 0) return;
+    statusSummary.innerText = `Uploading ${completed} of ${files.length}...`;
+  }
 
-      const grid = document.getElementById('galleryGrid');
-      const statusSummary = document.getElementById('statusSummary');
-      statusSummary.innerText = `Uploading 0 of ${files.length}...`;
-
-      let completed = 0;
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', UPLOAD_PRESET);
-        formData.append('tags', EVENT_TAG); // Tag photo so it shows in the shared gallery
-
-        // Create temporary preview at top of gallery
-        const tempCard = document.createElement('div');
-        tempCard.className = 'grid-item';
-        tempCard.innerHTML = `
-          <img src="${URL.createObjectURL(file)}">
-          <div class="overlay"><div class="spinner"></div></div>
-        `;
-        grid.prepend(tempCard);
-
-        try {
-          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
-            method: 'POST',
-            body: formData
-          });
-
-          if (res.ok) {
-            completed++;
-            tempCard.querySelector('.overlay').remove();
-          } else {
-            tempCard.remove();
-          }
-        } catch (err) {
-          tempCard.remove();
-        }
-
-        statusSummary.innerText = `Uploading ${completed} of ${files.length}...`;
-      }
-
-      statusSummary.innerText = '✅ Photos Shared Successfully!';
-      document.getElementById('fileInput').value = '';
-    }
+  statusSummary.innerText = '✅ Photos Shared Successfully!';
+  document.getElementById('fileInput').value = '';
+  
+  // Refresh gallery list after a brief delay to align versions
+  setTimeout(loadSharedGallery, 1500);
+}
   </script>
 </body>
 </html>
